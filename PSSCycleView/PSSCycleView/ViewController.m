@@ -39,7 +39,6 @@
     view.backgroundColor = [UIColor purpleColor];
     view.text = [NSString stringWithFormat:@"%ld", index];
     view.textAlignment = NSTextAlignmentCenter;
-    [cell.contentView addSubview:view];
     return view;
 }
 - (NSInteger)numberOfItemsInCycleView:(PSSCycleView *)cycleView
