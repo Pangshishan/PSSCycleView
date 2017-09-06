@@ -32,25 +32,24 @@
     view.duration = 4;
     [view refreshCycle];
 }
-// 只有在创建View的时候, 才会调用这个方法, 总共只调用`numberOfItemsInCycleView:`次
+// 只有在创建View的时候, 才会调用这个方法, 总共只调用`numberOfItemsInCycleView:` + 2 次
 - (UIView *)cycleView:(PSSCycleView *)cycleView  cell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index {
     
     UILabel *view = [[UILabel alloc] initWithFrame:cell.contentView.bounds];
     view.backgroundColor = [UIColor purpleColor];
     view.text = [NSString stringWithFormat:@"%ld", index];
     view.textAlignment = NSTextAlignmentCenter;
+    NSLog(@"%ld", index);
     return view;
 }
 - (NSInteger)numberOfItemsInCycleView:(PSSCycleView *)cycleView
 {
-    return 5;
+    return 10;
 }
 - (void)cycleView:(PSSCycleView *)cycleView didSelectItemAtIndex:(NSInteger)index
 {
     NSLog(@"%ld", index);
 }
-
-
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];

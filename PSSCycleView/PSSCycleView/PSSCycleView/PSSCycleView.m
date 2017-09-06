@@ -37,7 +37,8 @@
 {
     [self.viewDict removeAllObjects];
     _pageControl.numberOfPages = [self.delegate respondsToSelector:@selector(numberOfItemsInCycleView:)] ? [self.delegate numberOfItemsInCycleView:self] : 1;
-    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:1 inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
+//    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:1 inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
+    [self.collectionView setContentOffset:CGPointMake(self.bounds.size.width * 1, 0) animated:NO];
     [self.collectionView reloadData];
 }
 
@@ -60,6 +61,7 @@
     [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:PSSCycleViewCellID];
     collectionView.pagingEnabled = YES;
     collectionView.showsHorizontalScrollIndicator = NO;
+    collectionView.bounces = NO;
 }
 
 - (void)addPageControl
@@ -73,7 +75,7 @@
 
 - (void)timerRunning
 {
-    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.pageControl.currentPage + 2 inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:true];
+    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.pageControl.currentPage + 2 inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
 }
 
 
@@ -82,49 +84,49 @@
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:PSSCycleViewCellID forIndexPath:indexPath];
     cell.contentView.backgroundColor = [UIColor whiteColor];
     
-    if (!self.viewDict[@(indexPath.row)]) {
+    if (self.viewDict[@(indexPath.row)] == nil) {
         NSInteger count = [self.delegate numberOfItemsInCycleView:self];
         if (indexPath.row == 0) {
-            if (self.viewDict[@(count)]) {
-                self.viewDict[@(indexPath.row)] = self.viewDict[@(count)];
-            } else {
-                UIView *view = [self.delegate cycleView:self cell:cell forItemAtIndex:count - 1];
-                self.viewDict[@(indexPath.row)] = view;
-                self.viewDict[@(count)] = view;
-            }
+            UIView *view = [self.delegate cycleView:self cell:cell forItemAtIndex:count - 1];
+            self.viewDict[@(indexPath.row)] = view;
         } else if (indexPath.row == count + 1) {
-            if (self.viewDict[@(1)]) {
-                self.viewDict[@(indexPath.row)] = self.viewDict[@(1)];
-            } else {
-                UIView *view = [self.delegate cycleView:self cell:cell forItemAtIndex:0];
-                self.viewDict[@(indexPath.row)] = view;
-                self.viewDict[@(1)] = view;
-            }
+            UIView *view = [self.delegate cycleView:self cell:cell forItemAtIndex:0];
+            self.viewDict[@(indexPath.row)] = view;
         } else {
             self.viewDict[@(indexPath.row)] = [self.delegate cycleView:self cell:cell forItemAtIndex:indexPath.row - 1];
         }
-    } else {
-        UIView *view = self.viewDict[@(indexPath.row)];
-        for (UIView *subView in cell.contentView.subviews) {
-            [subView removeFromSuperview];
-        }
-        [cell.contentView addSubview:view];
     }
+    UIView *view = self.viewDict[@(indexPath.row)];
+    for (UIView *subView in cell.contentView.subviews) {
+        [subView removeFromSuperview];
+    }
+    [cell.contentView addSubview:view];
     return cell;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
 {
     if ([self.delegate respondsToSelector:@selector(numberOfItemsInCycleView:)]) {
-        return [self.delegate numberOfItemsInCycleView:self] + 2;
+        NSInteger count = [self.delegate numberOfItemsInCycleView:self];
+        if (count == 0) {
+            return 0;
+        } else if (count == 1) {
+            return 1;
+        } else {
+            return count + 2;
+        }
     }
     return 0;
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    NSInteger count = 0;
+    if ([self.delegate respondsToSelector:@selector(numberOfItemsInCycleView:)]) {
+        count = [self.delegate numberOfItemsInCycleView:self];
+    }
     if ([self.delegate respondsToSelector:@selector(cycleView:didSelectItemAtIndex:)]) {
-        [self.delegate cycleView:self didSelectItemAtIndex:indexPath.row - 1];
+        [self.delegate cycleView:self didSelectItemAtIndex:count < 2 ? 0 : indexPath.row - 1];
     }
 }
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
@@ -159,7 +161,11 @@
 - (void)setDuration:(NSTimeInterval)duration
 {
     _duration = duration;
-    if (duration != 0) {
+    NSInteger count = 0;
+    if ([self.delegate respondsToSelector:@selector(numberOfItemsInCycleView:)]) {
+        count = [self.delegate numberOfItemsInCycleView:self];
+    }
+    if (duration != 0 && count > 1) {
         if (self.timer) {
             [self.timer invalidate];
             self.timer = nil;
@@ -175,6 +181,11 @@
         _viewDict = [NSMutableDictionary dictionary];
     }
     return _viewDict;
+}
+
+- (void)dealloc
+{
+    [self.timer invalidate];
 }
 
 @end
